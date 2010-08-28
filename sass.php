@@ -41,9 +41,10 @@ Author URI: http://www.80beans.com/
 function sass($filename)
 {
 	// Correct some user input (using '.css' or '.sass').
-	if (strpos($filename, '.css') || strpos($filename, '.sass'))
+	$ext = pathinfo($filename, PATHINFO_EXTENSION);
+	if ($ext == 'css' || $ext == 'sass')
 	{
-		$filename = str_replace(array('.css', '.sass'), '', $filename);
+		$filename = substr($filename, 0, -(1 + strlen($ext)));
 	}
 	// Let's also make sure the user didn't use a filepath (and fix it).
 	if (strpos($filename, '/'))
