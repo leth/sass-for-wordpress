@@ -46,17 +46,23 @@ function sass($filename)
 	{
 		$filename = substr($filename, 0, -(1 + strlen($ext)));
 	}
-	// Let's also make sure the user didn't use a filepath (and fix it).
-	if (strpos($filename, '/'))
+
+	$filepath = $filename;
+	
+	// Check whether user already specified the template path
+	if (substr($filename, 0, strlen(TEMPLATEPATH.DIRECTORY_SEPARATOR)) == TEMPLATEPATH.DIRECTORY_SEPARATOR)
 	{
-		$parts = explode('/', $filename);
-		$filename = $parts[count($parts)-1];
+		$filename = substr($filename, strlen(TEMPLATEPATH.DIRECTORY_SEPARATOR));
+	}
+	else
+	{
+		$filepath = TEMPLATEPATH . DIRECTORY_SEPARATOR . $filepath;
 	}
 	
 	// Store the filesystem paths for the Sass and CSS filenames in variables.
-	$sass_filename = TEMPLATEPATH . '/'. $filename . '.sass';
-	$css_filename = TEMPLATEPATH . '/'. $filename . '.css';
-	
+	$sass_filename = $filepath . '.sass';
+	$css_filename = $filepath . '.css';
+
 	// If the Sass doesn't exist, throw an error.
 	if (!file_exists($sass_filename))
 	{
