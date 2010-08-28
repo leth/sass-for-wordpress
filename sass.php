@@ -40,9 +40,9 @@ Author URI: http://www.80beans.com/
 
 function sass($filename)
 {
-	// Correct some user input (using '.css' or '.sass').
+	// Correct some user input (using '.css', '.sass' or '.scss').
 	$ext = pathinfo($filename, PATHINFO_EXTENSION);
-	if ($ext == 'css' || $ext == 'sass')
+	if ($ext == 'css' || $ext == 'sass' || $ext == 'scss')
 	{
 		$filename = substr($filename, 0, -(1 + strlen($ext)));
 	}
@@ -60,30 +60,36 @@ function sass($filename)
 	}
 	
 	// Store the filesystem paths for the Sass and CSS filenames in variables.
-	$sass_filename = $filepath . '.sass';
 	$css_filename = $filepath . '.css';
+	$sass_filename = $filepath .'.sass';
+	$scss_filename = $filepath .'.scss';
 
 	// If the Sass doesn't exist, throw an error.
-	if (!file_exists($sass_filename))
+	if (!file_exists($sass_filename) && !file_exists($scss_filename))
 	{
-		sass_error($css_filename, 'File ' . $sass_filename . ' does not exist.');
+		sass_error($css_filename, 'File ' . $filepath . '.(sass|scss) does not exist.');
 	}
-	
 	// Now we're sure there's a Sass file to transform, let's do it!
-	else if (!file_exists($css_filename) || filemtime($css_filename) < filemtime($sass_filename))
+	else
 	{
-		@unlink($css_filename);
-		exec('sass ' . escapeshellarg($sass_filename) . ' ' . escapeshellarg($css_filename) . ' 2>&1', $output, $return);
+		$input_filename = (file_exists($sass_filename) ? $sass_filename : $scss_filename);
 		
-		if ($return != 0)
+		if (!file_exists($css_filename) || filemtime($css_filename) < filemtime($input_filename))
 		{
-			if ($return == 127)
-				sass_error($css_filename, 'Sass executable not found. Verify that it is installed and on the PATH.');
-			else
-				sass_error($css_filename, "Sass command did not exit cleanly. Command output follows\n\n" . join("\n",$output));
 		
-			// Set the modified time to BEFORE the sass file mtime, so that the user doesn't have to manually delete the css to cause a refresh.
-			@touch($css_filename, filemtime($sass_filename) -1);
+			@unlink($css_filename);
+			exec('sass ' . escapeshellarg($input_filename) . ' ' . escapeshellarg($css_filename) . ' 2>&1', $output, $return);
+		
+			if ($return != 0)
+			{
+				if ($return == 127)
+					sass_error($css_filename, 'Sass executable not found. Verify that it is installed and on the PATH.');
+				else
+					sass_error($css_filename, "Sass command did not exit cleanly. Command output follows\n\n" . join("\n",$output));
+			
+				// Set the modified time to BEFORE the sass file mtime, so that the user doesn't have to manually delete the css to cause a refresh.
+				@touch($css_filename, filemtime($input_filename) -1);
+			}
 		}
 	}
 	
