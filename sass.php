@@ -73,12 +73,15 @@ function sass($filename)
 	else if (!file_exists($css_filename) || filemtime($css_filename) < filemtime($sass_filename))
 	{
 		@unlink($css_filename);
-		exec('sass ' . escapeshellarg($sass_filename) . ' ' . escapeshellarg($css_filename), $output, $return);
+		exec('sass ' . escapeshellarg($sass_filename) . ' ' . escapeshellarg($css_filename) . ' 2>&1', $output, $return);
 		
-		if ($return == 127)
+		if ($return != 0)
 		{
-			sass_error($css_filename, 'Sass executable not found. Verify that it is installed and on the PATH.');
-			
+			if ($return == 127)
+				sass_error($css_filename, 'Sass executable not found. Verify that it is installed and on the PATH.');
+			else
+				sass_error($css_filename, "Sass command did not exit cleanly. Command output follows\n\n" . join("\n",$output));
+		
 			// Set the modified time to BEFORE the sass file mtime, so that the user doesn't have to manually delete the css to cause a refresh.
 			@touch($css_filename, filemtime($sass_filename) -1);
 		}
@@ -90,6 +93,11 @@ function sass($filename)
 // This function throws an error by using the CSS ':before' pseudo-element.
 function sass_error($css_filename, $error)
 {
+	$trans = array(
+		'"' => '\"',
+		"\n"=> '\A',
+	);
+	
 	@unlink($css_filename);
-	file_put_contents($css_filename, 'body:before { white-space: pre; font-family: monospace; content: "Sass for Wordpress error: ' . str_replace('"','\"', $error) . '"; }');
+	file_put_contents($css_filename, 'body:before { white-space: pre; font-family: monospace; content: "Sass for Wordpress error: ' . strtr($error, $trans) . '"; }');
 }
