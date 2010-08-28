@@ -73,7 +73,15 @@ function sass($filename)
 	else if (!file_exists($css_filename) || filemtime($css_filename) < filemtime($sass_filename))
 	{
 		@unlink($css_filename);
-		exec('sass ' . escapeshellcmd($sass_filename) . ' ' . escapeshellcmd($css_filename));
+		exec('sass ' . escapeshellarg($sass_filename) . ' ' . escapeshellarg($css_filename), $output, $return);
+		
+		if ($return == 127)
+		{
+			sass_error($css_filename, 'Sass executable not found. Verify that it is installed and on the PATH.');
+			
+			// Set the modified time to BEFORE the sass file mtime, so that the user doesn't have to manually delete the css to cause a refresh.
+			@touch($css_filename, filemtime($sass_filename) -1);
+		}
 	}
 	
 	return get_bloginfo('template_directory') . '/' . $filename . '.css';
@@ -85,5 +93,3 @@ function sass_error($css_filename, $error)
 	@unlink($css_filename);
 	file_put_contents($css_filename, 'body:before { white-space: pre; font-family: monospace; content: "Sass for Wordpress error: ' . str_replace('"','\"', $error) . '"; }');
 }
-
-?>
